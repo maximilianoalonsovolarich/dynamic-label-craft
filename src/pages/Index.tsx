@@ -10,31 +10,40 @@ import {
   Database, 
   FileText, 
   Tag,
-  Zap
+  Zap,
+  Sparkles,
+  Crown,
+  Settings
 } from "lucide-react";
 
 const Index = () => {
   const [data, setData] = useState<Record<string, any>[]>([
     {
-      nombre: "Producto A",
-      descripcion: "Descripción del producto A",
-      precio: "$19.99",
-      codigo: "PA001",
-      categoria: "Electrónicos"
+      nombre: "MacBook Pro 16",
+      descripcion: "Laptop profesional Apple M2",
+      precio: "$2,499.00",
+      codigo: "MBP16-M2-001",
+      categoria: "Electrónicos",
+      stock: "15",
+      ubicacion: "A1-B2-C3"
     },
     {
-      nombre: "Producto B", 
-      descripcion: "Descripción del producto B",
-      precio: "$29.99",
-      codigo: "PB002",
-      categoria: "Hogar"
+      nombre: "iPhone 15 Pro", 
+      descripcion: "Smartphone Apple con titanio",
+      precio: "$999.00",
+      codigo: "IP15P-TIT-002",
+      categoria: "Móviles",
+      stock: "42",
+      ubicacion: "A2-B1-C4"
     },
     {
-      nombre: "Producto C",
-      descripcion: "Descripción del producto C", 
-      precio: "$39.99",
-      codigo: "PC003",
-      categoria: "Deportes"
+      nombre: "AirPods Pro 2",
+      descripcion: "Auriculares inalámbricos con cancelación",
+      precio: "$249.00",
+      codigo: "APP2-CNC-003",
+      categoria: "Audio",
+      stock: "88",
+      ubicacion: "A3-B3-C1"
     }
   ]);
   
@@ -52,30 +61,38 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-6 py-4">
+      {/* Professional Header */}
+      <header className="border-b bg-gradient-to-r from-primary to-primary-hover">
+        <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary rounded-lg">
-                <Tag className="w-6 h-6 text-primary-foreground" />
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur">
+                <Tag className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">LabelPro</h1>
-                <p className="text-sm text-muted-foreground">
-                  Sistema de etiquetas dinámicas profesional
+                <h1 className="text-3xl font-bold text-white">LabelPro</h1>
+                <p className="text-primary-foreground/80">
+                  Sistema Profesional de Etiquetas Dinámicas
                 </p>
               </div>
+              <Badge className="bg-warning text-warning-foreground">
+                <Crown className="w-3 h-3 mr-1" />
+                Professional
+              </Badge>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="gap-1">
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="gap-1 bg-white/10 text-white border-white/20">
                 <Database className="w-3 h-3" />
                 {data.length} registros
               </Badge>
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-1 bg-white/10 text-white border-white/20">
                 <Zap className="w-3 h-3" />
                 {variables.length} variables
+              </Badge>
+              <Badge variant="secondary" className="gap-1 bg-white/10 text-white border-white/20">
+                <Sparkles className="w-3 h-3" />
+                QR + PDF
               </Badge>
             </div>
           </div>
@@ -83,25 +100,25 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-6">
+      <main className="container mx-auto px-6 py-8">
         <Tabs defaultValue="editor" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="editor" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-3 mb-8 bg-card border shadow-sm">
+            <TabsTrigger value="editor" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Layout className="w-4 h-4" />
-              Editor de Etiquetas
+              Editor Profesional
             </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center gap-2">
+            <TabsTrigger value="data" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Database className="w-4 h-4" />
               Gestión de Datos
             </TabsTrigger>
-            <TabsTrigger value="pdf" className="flex items-center gap-2">
+            <TabsTrigger value="pdf" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="w-4 h-4" />
               Generador PDF
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="editor" className="space-y-6">
-            <Card className="p-1">
+            <Card className="p-1 shadow-lg border-canvas-border">
               <LabelEditor 
                 data={data}
                 selectedRow={selectedRow}
@@ -128,15 +145,23 @@ const Index = () => {
         </Tabs>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t bg-card mt-12">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <p>© 2024 LabelPro. Sistema de etiquetas dinámicas.</p>
-            <div className="flex items-center gap-4">
-              <Badge variant="outline">Fabric.js</Badge>
+      {/* Professional Footer */}
+      <footer className="border-t bg-card mt-16">
+        <div className="container mx-auto px-6 py-6">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <Tag className="w-4 h-4 text-primary" />
+              <span className="font-medium">© 2024 LabelPro</span>
+              <span className="text-muted-foreground">Sistema profesional de etiquetas dinámicas</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="gap-1">
+                <Settings className="w-3 h-3" />
+                Fabric.js v6
+              </Badge>
               <Badge variant="outline">jsPDF</Badge>
-              <Badge variant="outline">Papa Parse</Badge>
+              <Badge variant="outline">QR Codes</Badge>
+              <Badge variant="outline">CSV Import/Export</Badge>
             </div>
           </div>
         </div>

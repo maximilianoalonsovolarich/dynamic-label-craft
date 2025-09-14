@@ -420,225 +420,291 @@ export const LabelEditor = ({ data, selectedRow, onVariablesChange }: LabelEdito
   };
 
   return (
-    <div className="flex flex-col h-full bg-editor-bg">
-      {/* Main Toolbar */}
-      <AdvancedToolbar
-        activeColor={activeColor}
-        onColorChange={setActiveColor}
-        onAddText={addText}
-        onAddShape={addShape}
-        onAddImage={() => {}} // Removed file upload
-        onAddQRCode={() => {}}
-        onAddLink={() => setLinkDialogOpen(true)}
-        fontSize={fontSize}
-        onFontSizeChange={setFontSize}
-        fontFamily={fontFamily}
-        onFontFamilyChange={setFontFamily}
-        onAlignText={(alignment) => {
-          const activeObj = fabricCanvas?.getActiveObject();
-          if (activeObj && activeObj.type === 'textbox') {
-            (activeObj as Textbox).set('textAlign', alignment);
-            fabricCanvas?.renderAll();
-          }
-        }}
-        onTextStyle={(style) => {
-          const activeObj = fabricCanvas?.getActiveObject();
-          if (activeObj && activeObj.type === 'textbox') {
-            const textObj = activeObj as Textbox;
-            switch (style) {
-              case 'bold':
-                textObj.set('fontWeight', textObj.fontWeight === 'bold' ? 'normal' : 'bold');
-                break;
-              case 'italic':
-                textObj.set('fontStyle', textObj.fontStyle === 'italic' ? 'normal' : 'italic');
-                break;
-              case 'underline':
-                textObj.set('underline', !textObj.underline);
-                break;
-            }
-            fabricCanvas?.renderAll();
-          }
-        }}
-      />
-
-      <div className="flex flex-col lg:flex-row flex-1 gap-4 p-4 pt-0">
-        {/* Left Panel - Responsive */}
-        <div className="w-full lg:w-80 xl:w-96 space-y-4">
-          {/* Label Size Selector */}
-          <LabelSizeSelector
-            selectedSize={selectedSize}
-            onSizeChange={setSelectedSize}
-            onCustomSizeChange={(width, height) => {
-              // Canvas will be recreated with new size
-            }}
-          />
-
-          {/* Variables Panel */}
-          <Card className="overflow-hidden">
-            <div className="p-4 bg-primary/5 border-b">
-              <h3 className="font-semibold text-sm flex items-center gap-2">
-                <Layers className="w-4 h-4" />
-                Variables y Datos
-              </h3>
-            </div>
-            <div className="p-4 space-y-4">
-              {data.length > 0 && (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">
-                      Columnas disponibles:
-                    </p>
-                    <div className="grid grid-cols-1 gap-1.5 max-h-32 overflow-y-auto custom-scrollbar">
-                      {Object.keys(data[0]).map((key) => (
-                        <Button
-                          key={key}
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (fabricCanvas) {
-                              const text = new Textbox(`{{${key}}}`, {
-                                left: 50,
-                                top: 50,
-                                fill: activeColor,
-                                fontSize: fontSize,
-                                fontFamily: fontFamily,
-                                width: 150,
-                              });
-                              fabricCanvas.add(text);
-                              updateVariables();
-                            }
-                          }}
-                          className="w-full justify-start text-xs h-7 px-2 bg-secondary/30 hover:bg-secondary/60"
-                        >
-                          + {key}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {variables.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Variables activas:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {variables.map((variable) => (
-                      <Badge key={variable} variant="secondary" className="text-xs">
-                        {`{{${variable}}}`}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* Alignment Tools */}
-          <AlignmentTools fabricCanvas={fabricCanvas} />
-
-          {/* Canvas Controls */}
-          <Card className="overflow-hidden">
-            <div className="p-4 bg-primary/5 border-b">
-              <h3 className="font-semibold text-sm">Controles del Canvas</h3>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <Button onClick={zoomIn} variant="outline" size="sm" className="flex-1">
-                  <ZoomIn className="w-4 h-4" />
+    <>
+      <div className="flex h-full bg-editor-bg">
+        {/* Left Sidebar - Fixed width, always visible */}
+        <div className="w-80 min-w-80 border-r border-border bg-background flex flex-col">
+          {/* Toolbar Section - Compact */}
+          <div className="p-3 border-b border-border bg-muted/30">
+            <div className="flex flex-wrap gap-1">
+              <Button onClick={addText} variant="outline" size="sm" className="h-8 px-2">
+                T
+              </Button>
+              <div className="flex border rounded-md">
+                <Button onClick={() => addShape('rectangle')} variant="ghost" size="sm" className="h-8 px-2 rounded-none border-r">
+                  □
                 </Button>
-                <Button onClick={zoomOut} variant="outline" size="sm" className="flex-1">
-                  <ZoomOut className="w-4 h-4" />
+                <Button onClick={() => addShape('circle')} variant="ghost" size="sm" className="h-8 px-2 rounded-none border-r">
+                  ○
                 </Button>
-                <Badge variant="outline" className="text-xs">{Math.round(canvasScale * 100)}%</Badge>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-xs">Cuadrícula</span>
-                <Button 
-                  onClick={() => setShowGrid(!showGrid)} 
-                  variant={showGrid ? "default" : "outline"} 
-                  size="sm"
-                  className="h-7"
-                >
-                  <Grid3X3 className="w-4 h-4" />
+                <Button onClick={() => addShape('triangle')} variant="ghost" size="sm" className="h-8 px-2 rounded-none border-r">
+                  △
+                </Button>
+                <Button onClick={() => addShape('star')} variant="ghost" size="sm" className="h-8 px-2 rounded-none border-r">
+                  ★
+                </Button>
+                <Button onClick={() => addShape('line')} variant="ghost" size="sm" className="h-8 px-2 rounded-none">
+                  ―
                 </Button>
               </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Color de fondo:</Label>
-                <Input
-                  type="color"
-                  value={canvasBackground}
-                  onChange={(e) => setCanvasBackground(e.target.value)}
-                  className="w-full h-8 p-1"
-                />
-              </div>
-
-              {/* Image URL Input */}
-              <div className="space-y-2">
-                <Label className="text-xs">Agregar imagen por URL:</Label>
-                <ImageUrlDialog onImageLoad={handleImageFromUrl}>
-                  <Button variant="outline" size="sm" className="w-full h-8">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Imagen URL
-                  </Button>
-                </ImageUrlDialog>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Canvas Area - Responsive */}
-        <Card className="flex-1 overflow-hidden bg-canvas-bg border-canvas-border">
-          {/* Canvas Header - Responsive */}
-          <div className="p-4 bg-primary/5 border-b">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" className="text-xs">
-                  {selectedSize.name}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {selectedSize.width} × {selectedSize.height} mm
-                </Badge>
-              </div>
-              
-              <div className="flex items-center gap-1 flex-wrap">
-                <Button onClick={duplicateSelected} variant="outline" size="sm" className="h-7">
-                  <Copy className="w-3 h-3" />
-                </Button>
-                <Button onClick={deleteSelected} variant="outline" size="sm" className="h-7">
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-                <Button onClick={previewWithData} variant="default" size="sm" className="h-7">
-                  <Eye className="w-3 h-3 mr-1" />
-                  <span className="hidden sm:inline">Vista Previa</span>
-                </Button>
-                <Button onClick={exportCanvas} variant="outline" size="sm" className="h-7">
-                  <Download className="w-3 h-3 mr-1" />
-                  <span className="hidden sm:inline">Exportar</span>
-                </Button>
-                <Button onClick={clearCanvas} variant="outline" size="sm" className="h-7">
-                  <RotateCcw className="w-3 h-3 mr-1" />
-                  <span className="hidden sm:inline">Limpiar</span>
-                </Button>
-              </div>
+              <Input
+                type="color"
+                value={activeColor}
+                onChange={(e) => setActiveColor(e.target.value)}
+                className="w-8 h-8 p-0 border-0"
+              />
             </div>
           </div>
 
-          {/* Canvas Container - Centrado y responsive */}
-          <div className="p-4 h-full">
-            <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 overflow-auto">
-              <div className="flex items-center justify-center p-4">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="p-3 space-y-3">
+              {/* Quick Font Controls */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <select 
+                    value={fontFamily} 
+                    onChange={(e) => setFontFamily(e.target.value)}
+                    className="w-full h-8 text-xs bg-background border rounded px-2"
+                  >
+                    <option value="Arial">Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times New Roman">Times</option>
+                    <option value="Courier New">Courier</option>
+                  </select>
+                </div>
+                <Input
+                  type="number"
+                  value={fontSize}
+                  onChange={(e) => setFontSize(Number(e.target.value))}
+                  className="w-16 h-8 text-xs"
+                  min="8"
+                  max="72"
+                />
+              </div>
+
+              {/* Text Style Controls */}
+              <div className="flex gap-1">
+                <Button 
+                  onClick={() => {
+                    const activeObj = fabricCanvas?.getActiveObject();
+                    if (activeObj && activeObj.type === 'textbox') {
+                      (activeObj as Textbox).set('fontWeight', (activeObj as Textbox).fontWeight === 'bold' ? 'normal' : 'bold');
+                      fabricCanvas?.renderAll();
+                    }
+                  }}
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 px-2 font-bold"
+                >
+                  B
+                </Button>
+                <Button 
+                  onClick={() => {
+                    const activeObj = fabricCanvas?.getActiveObject();
+                    if (activeObj && activeObj.type === 'textbox') {
+                      (activeObj as Textbox).set('fontStyle', (activeObj as Textbox).fontStyle === 'italic' ? 'normal' : 'italic');
+                      fabricCanvas?.renderAll();
+                    }
+                  }}
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 px-2 italic"
+                >
+                  I
+                </Button>
+                <Button 
+                  onClick={() => {
+                    const activeObj = fabricCanvas?.getActiveObject();
+                    if (activeObj && activeObj.type === 'textbox') {
+                      (activeObj as Textbox).set('underline', !(activeObj as Textbox).underline);
+                      fabricCanvas?.renderAll();
+                    }
+                  }}
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 px-2 underline"
+                >
+                  U
+                </Button>
+              </div>
+
+              {/* Label Size Selector */}
+              <LabelSizeSelector
+                selectedSize={selectedSize}
+                onSizeChange={setSelectedSize}
+                onCustomSizeChange={(width, height) => {
+                  // Canvas will be recreated with new size
+                }}
+              />
+
+              {/* Variables Panel */}
+              <Card className="overflow-hidden">
+                <div className="p-3 bg-primary/5 border-b">
+                  <h3 className="font-medium text-sm flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    Variables
+                  </h3>
+                </div>
+                <div className="p-3 space-y-3">
+                  {data.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">
+                        Columnas disponibles:
+                      </p>
+                      <div className="grid grid-cols-1 gap-1 max-h-24 overflow-y-auto custom-scrollbar">
+                        {Object.keys(data[0]).map((key) => (
+                          <Button
+                            key={key}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (fabricCanvas) {
+                                const text = new Textbox(`{{${key}}}`, {
+                                  left: 50,
+                                  top: 50,
+                                  fill: activeColor,
+                                  fontSize: fontSize,
+                                  fontFamily: fontFamily,
+                                  width: 150,
+                                });
+                                fabricCanvas.add(text);
+                                updateVariables();
+                              }
+                            }}
+                            className="w-full justify-start text-xs h-6 px-2 bg-secondary/30 hover:bg-secondary/60"
+                          >
+                            + {key}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {variables.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Variables activas:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {variables.map((variable) => (
+                          <Badge key={variable} variant="secondary" className="text-xs">
+                            {`{{${variable}}}`}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              {/* Alignment Tools */}
+              <AlignmentTools fabricCanvas={fabricCanvas} />
+
+              {/* Canvas Controls */}
+              <Card className="overflow-hidden">
+                <div className="p-3 bg-primary/5 border-b">
+                  <h3 className="font-medium text-sm">Controles</h3>
+                </div>
+                <div className="p-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Button onClick={zoomIn} variant="outline" size="sm" className="flex-1 h-7">
+                      <ZoomIn className="w-3 h-3" />
+                    </Button>
+                    <Button onClick={zoomOut} variant="outline" size="sm" className="flex-1 h-7">
+                      <ZoomOut className="w-3 h-3" />
+                    </Button>
+                    <Badge variant="outline" className="text-xs px-2">{Math.round(canvasScale * 100)}%</Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs">Cuadrícula</span>
+                    <Button 
+                      onClick={() => setShowGrid(!showGrid)} 
+                      variant={showGrid ? "default" : "outline"} 
+                      size="sm"
+                      className="h-6"
+                    >
+                      <Grid3X3 className="w-3 h-3" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Color de fondo:</Label>
+                    <Input
+                      type="color"
+                      value={canvasBackground}
+                      onChange={(e) => setCanvasBackground(e.target.value)}
+                      className="w-full h-7 p-1"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Imagen URL:</Label>
+                    <ImageUrlDialog onImageLoad={handleImageFromUrl}>
+                      <Button variant="outline" size="sm" className="w-full h-7 text-xs">
+                        <Upload className="w-3 h-3 mr-1" />
+                        Agregar
+                      </Button>
+                    </ImageUrlDialog>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Button onClick={() => setLinkDialogOpen(true)} variant="outline" size="sm" className="w-full h-7 text-xs">
+                      <LinkIcon className="w-3 h-3 mr-1" />
+                      Enlace
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Canvas Area - Always visible and prominent */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Canvas Header - Compact */}
+          <div className="h-12 px-4 bg-primary/5 border-b flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {selectedSize.name}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {selectedSize.width} × {selectedSize.height} mm
+              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button onClick={duplicateSelected} variant="outline" size="sm" className="h-7 px-2">
+                <Copy className="w-3 h-3" />
+              </Button>
+              <Button onClick={deleteSelected} variant="outline" size="sm" className="h-7 px-2">
+                <Trash2 className="w-3 h-3" />
+              </Button>
+              <Button onClick={previewWithData} variant="default" size="sm" className="h-7 px-2">
+                <Eye className="w-3 h-3" />
+              </Button>
+              <Button onClick={exportCanvas} variant="outline" size="sm" className="h-7 px-2">
+                <Download className="w-3 h-3" />
+              </Button>
+              <Button onClick={clearCanvas} variant="outline" size="sm" className="h-7 px-2">
+                <RotateCcw className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Canvas Container - Full height, always visible */}
+          <div className="flex-1 p-4 bg-canvas-bg">
+            <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-lg border-2 border-dashed border-border/50">
+              <div className="flex items-center justify-center">
                 <div 
-                  className="shadow-xl rounded-lg overflow-hidden bg-white"
+                  className="shadow-2xl rounded-lg overflow-hidden bg-background border"
                   style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
+                    maxWidth: 'calc(100% - 2rem)',
+                    maxHeight: 'calc(100% - 2rem)',
                   }}
                 >
                   <canvas 
                     ref={canvasRef} 
-                    className="block max-w-full max-h-full"
+                    className="block"
                     style={{
                       transform: `scale(${Math.min(1, canvasScale)})`,
                       transformOrigin: 'center center'
@@ -648,9 +714,8 @@ export const LabelEditor = ({ data, selectedRow, onVariablesChange }: LabelEdito
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
-
 
       {/* QR Code Dialog */}
       <QRCodeDialog onGenerate={handleQRCodeGenerate}>
@@ -692,6 +757,6 @@ export const LabelEditor = ({ data, selectedRow, onVariablesChange }: LabelEdito
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };

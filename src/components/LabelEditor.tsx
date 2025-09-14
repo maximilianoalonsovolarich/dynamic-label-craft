@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { AdvancedToolbar } from "./AdvancedToolbar";
 import { LabelSizeSelector } from "./LabelSizeSelector";
 import { QRCodeDialog } from "./QRCodeDialog";
+import { ImageUrlDialog } from "./ImageUrlDialog";
+import { AlignmentTools } from "./AlignmentTools";
 import { generateQRCode } from "@/lib/qrGenerator";
 import { loadImageFromFile } from "@/lib/imageUtils";
 import { LabelSize, STANDARD_LABEL_SIZES } from "@/lib/labelSizes";
@@ -198,29 +200,35 @@ export const LabelEditor = ({ data, selectedRow, onVariablesChange }: LabelEdito
     toast(`${shapeType} agregado!`);
   };
 
-  const handleImageUpload = () => {
-    fileInputRef.current?.click();
-  };
-
-  const onImageSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !fabricCanvas) return;
+  const handleImageFromUrl = async (imageUrl: string) => {
+    if (!fabricCanvas) return;
 
     try {
-      const img = await loadImageFromFile(file);
+      const img = document.createElement('img');
+      img.crossOrigin = "anonymous";
       
-      const fabricImage = new FabricImage(img, {
-        left: 50,
-        top: 50,
-        scaleX: 0.5,
-        scaleY: 0.5,
-      });
+      img.onload = () => {
+        const fabricImage = new FabricImage(img, {
+          left: 50,
+          top: 50,
+          scaleX: Math.min(200 / img.width, 200 / img.height), // Auto-scale to reasonable size
+          scaleY: Math.min(200 / img.width, 200 / img.height),
+        });
 
-      fabricCanvas.add(fabricImage);
-      toast("Imagen agregada exitosamente!");
+        fabricCanvas.add(fabricImage);
+        fabricCanvas.setActiveObject(fabricImage);
+        fabricCanvas.renderAll();
+        toast("¡Imagen agregada desde URL!");
+      };
+      
+      img.onerror = () => {
+        toast("Error al cargar imagen desde URL");
+      };
+      
+      img.src = imageUrl;
     } catch (error) {
-      console.error('Error loading image:', error);
-      toast("Error al cargar la imagen");
+      console.error('Error loading image from URL:', error);
+      toast("Error al procesar la imagen");
     }
   };
 
@@ -419,7 +427,7 @@ export const LabelEditor = ({ data, selectedRow, onVariablesChange }: LabelEdito
         onColorChange={setActiveColor}
         onAddText={addText}
         onAddShape={addShape}
-        onAddImage={handleImageUpload}
+        onAddImage={() => {}} // Removed file upload
         onAddQRCode={() => {}}
         onAddLink={() => setLinkDialogOpen(true)}
         fontSize={fontSize}
@@ -453,9 +461,9 @@ export const LabelEditor = ({ data, selectedRow, onVariablesChange }: LabelEdito
         }}
       />
 
-      <div className="flex flex-1 gap-4 p-4 pt-0">
-        {/* Left Panel */}
-        <div className="w-80 space-y-4">
+      <div className="flex flex-col lg:flex-row flex-1 gap-4 p-4 pt-0">
+        {/* Left Panel - Responsive */}
+        <div className="w-full lg:w-80 xl:w-96 space-y-4">
           {/* Label Size Selector */}
           <LabelSizeSelector
             selectedSize={selectedSize}
@@ -466,140 +474,183 @@ export const LabelEditor = ({ data, selectedRow, onVariablesChange }: LabelEdito
           />
 
           {/* Variables Panel */}
-          <Card className="p-4 bg-card border-canvas-border">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
-              <Layers className="w-4 h-4" />
-              Variables y Elementos
-            </h3>
-            
-            {data.length > 0 && (
-              <div className="space-y-2 mb-4">
-                <p className="text-sm text-muted-foreground">Columnas de datos:</p>
-                {Object.keys(data[0]).map((key) => (
-                  <Button
-                    key={key}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (fabricCanvas) {
-                        const text = new Textbox(`{{${key}}}`, {
-                          left: 50,
-                          top: 50,
-                          fill: activeColor,
-                          fontSize: fontSize,
-                          fontFamily: fontFamily,
-                          width: 150,
-                        });
-                        fabricCanvas.add(text);
-                        updateVariables();
-                      }
-                    }}
-                    className="w-full justify-start text-xs"
-                  >
-                    {key}
-                  </Button>
-                ))}
-              </div>
-            )}
+          <Card className="overflow-hidden">
+            <div className="p-4 bg-primary/5 border-b">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Layers className="w-4 h-4" />
+                Variables y Datos
+              </h3>
+            </div>
+            <div className="p-4 space-y-4">
+              {data.length > 0 && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">
+                      Columnas disponibles:
+                    </p>
+                    <div className="grid grid-cols-1 gap-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                      {Object.keys(data[0]).map((key) => (
+                        <Button
+                          key={key}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (fabricCanvas) {
+                              const text = new Textbox(`{{${key}}}`, {
+                                left: 50,
+                                top: 50,
+                                fill: activeColor,
+                                fontSize: fontSize,
+                                fontFamily: fontFamily,
+                                width: 150,
+                              });
+                              fabricCanvas.add(text);
+                              updateVariables();
+                            }
+                          }}
+                          className="w-full justify-start text-xs h-7 px-2 bg-secondary/30 hover:bg-secondary/60"
+                        >
+                          + {key}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            {variables.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Variables en uso:</p>
-                {variables.map((variable) => (
-                  <Badge key={variable} variant="secondary">
-                    {`{{${variable}}}`}
-                  </Badge>
-                ))}
-              </div>
-            )}
+              {variables.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Variables activas:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {variables.map((variable) => (
+                      <Badge key={variable} variant="secondary" className="text-xs">
+                        {`{{${variable}}}`}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </Card>
 
+          {/* Alignment Tools */}
+          <AlignmentTools fabricCanvas={fabricCanvas} />
+
           {/* Canvas Controls */}
-          <Card className="p-4 bg-card border-canvas-border">
-            <h3 className="font-semibold mb-4">Controles del Canvas</h3>
-            <div className="space-y-3">
+          <Card className="overflow-hidden">
+            <div className="p-4 bg-primary/5 border-b">
+              <h3 className="font-semibold text-sm">Controles del Canvas</h3>
+            </div>
+            <div className="p-4 space-y-4">
               <div className="flex items-center gap-2">
-                <Button onClick={zoomIn} variant="outline" size="sm">
+                <Button onClick={zoomIn} variant="outline" size="sm" className="flex-1">
                   <ZoomIn className="w-4 h-4" />
                 </Button>
-                <Button onClick={zoomOut} variant="outline" size="sm">
+                <Button onClick={zoomOut} variant="outline" size="sm" className="flex-1">
                   <ZoomOut className="w-4 h-4" />
                 </Button>
-                <Badge variant="outline">{Math.round(canvasScale * 100)}%</Badge>
+                <Badge variant="outline" className="text-xs">{Math.round(canvasScale * 100)}%</Badge>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs">Cuadrícula</span>
                 <Button 
                   onClick={() => setShowGrid(!showGrid)} 
                   variant={showGrid ? "default" : "outline"} 
                   size="sm"
+                  className="h-7"
                 >
                   <Grid3X3 className="w-4 h-4" />
                 </Button>
-                <span className="text-sm">Cuadrícula</span>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label className="text-xs">Color de fondo:</Label>
                 <Input
                   type="color"
                   value={canvasBackground}
                   onChange={(e) => setCanvasBackground(e.target.value)}
-                  className="w-full h-8 p-1 mt-1"
+                  className="w-full h-8 p-1"
                 />
+              </div>
+
+              {/* Image URL Input */}
+              <div className="space-y-2">
+                <Label className="text-xs">Agregar imagen por URL:</Label>
+                <ImageUrlDialog onImageLoad={handleImageFromUrl}>
+                  <Button variant="outline" size="sm" className="w-full h-8">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Imagen URL
+                  </Button>
+                </ImageUrlDialog>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Canvas Area */}
-        <Card className="flex-1 p-4 bg-canvas-bg border-canvas-border">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {selectedSize.name}
-              </Badge>
-              <Badge variant="outline">
-                {selectedSize.width} × {selectedSize.height} mm
-              </Badge>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button onClick={duplicateSelected} variant="outline" size="sm">
-                <Copy className="w-4 h-4" />
-              </Button>
-              <Button onClick={deleteSelected} variant="outline" size="sm">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-              <Button onClick={previewWithData} variant="default" size="sm">
-                <Eye className="w-4 h-4 mr-2" />
-                Vista Previa
-              </Button>
-              <Button onClick={exportCanvas} variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Exportar
-              </Button>
-              <Button onClick={clearCanvas} variant="outline" size="sm">
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Limpiar
-              </Button>
+        {/* Canvas Area - Responsive */}
+        <Card className="flex-1 overflow-hidden bg-canvas-bg border-canvas-border">
+          {/* Canvas Header - Responsive */}
+          <div className="p-4 bg-primary/5 border-b">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" className="text-xs">
+                  {selectedSize.name}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {selectedSize.width} × {selectedSize.height} mm
+                </Badge>
+              </div>
+              
+              <div className="flex items-center gap-1 flex-wrap">
+                <Button onClick={duplicateSelected} variant="outline" size="sm" className="h-7">
+                  <Copy className="w-3 h-3" />
+                </Button>
+                <Button onClick={deleteSelected} variant="outline" size="sm" className="h-7">
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+                <Button onClick={previewWithData} variant="default" size="sm" className="h-7">
+                  <Eye className="w-3 h-3 mr-1" />
+                  <span className="hidden sm:inline">Vista Previa</span>
+                </Button>
+                <Button onClick={exportCanvas} variant="outline" size="sm" className="h-7">
+                  <Download className="w-3 h-3 mr-1" />
+                  <span className="hidden sm:inline">Exportar</span>
+                </Button>
+                <Button onClick={clearCanvas} variant="outline" size="sm" className="h-7">
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  <span className="hidden sm:inline">Limpiar</span>
+                </Button>
+              </div>
             </div>
           </div>
 
-          <div className="border border-canvas-border rounded-lg overflow-auto bg-white p-4">
-            <canvas ref={canvasRef} className="shadow-lg" />
+          {/* Canvas Container - Centrado y responsive */}
+          <div className="p-4 h-full">
+            <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 overflow-auto">
+              <div className="flex items-center justify-center p-4">
+                <div 
+                  className="shadow-xl rounded-lg overflow-hidden bg-white"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                  }}
+                >
+                  <canvas 
+                    ref={canvasRef} 
+                    className="block max-w-full max-h-full"
+                    style={{
+                      transform: `scale(${Math.min(1, canvasScale)})`,
+                      transformOrigin: 'center center'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
       </div>
 
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={onImageSelected}
-        className="hidden"
-      />
 
       {/* QR Code Dialog */}
       <QRCodeDialog onGenerate={handleQRCodeGenerate}>

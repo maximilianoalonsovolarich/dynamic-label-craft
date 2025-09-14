@@ -51,6 +51,10 @@
     --editor-bg: 0 0% 99%;
     --toolbar-bg: 0 0% 100%;
     
+    /* Enhanced scrollbar */
+    --scrollbar-thumb: 203 213 225;
+    --scrollbar-track: 248 250 252;
+    
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(221 83% 45%));
     --gradient-accent: linear-gradient(135deg, hsl(221 83% 97%), hsl(210 40% 96%));
@@ -121,6 +125,10 @@
     --canvas-border: 210 11% 20%;
     --editor-bg: 210 11% 8%;
     --toolbar-bg: 210 11% 11%;
+    
+    /* Enhanced scrollbar dark */
+    --scrollbar-thumb: 71 85 105;
+    --scrollbar-track: 30 41 59;
 
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(221 83% 60%));
     --gradient-accent: linear-gradient(135deg, hsl(221 83% 15%), hsl(210 11% 13%));
@@ -146,4 +154,72 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom scrollbars */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--scrollbar-thumb)) hsl(var(--scrollbar-track));
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--scrollbar-track));
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--scrollbar-thumb));
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--scrollbar-thumb) / 0.8);
+}
+
+/* Responsive canvas container */
+@media (max-width: 1024px) {
+  .canvas-container {
+    max-height: 60vh;
+  }
+}
+
+/* Smooth transitions for UI elements */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Professional animations */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+.animate-fade-scale {
+  animation: fadeInScale 0.2s ease-out;
 }
